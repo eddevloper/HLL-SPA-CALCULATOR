@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora Artillería Sherman 105mm</title>
+    <!-- Vinculamos el archivo de estilos CSS -->
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+    <div align="center">
+        
+        <div class="selector-tanque">
+            <label for="tanqueSelect" class="label-tanque">VEHÍCULO:</label>
+            <select id="tanqueSelect" onchange="calcularElevacion(true)">
+                <option value="sherman" selected>Sherman 105mm (EE. UU.)</option>
+                <option value="stuh43">StuH 43 L/12 (Alemania)</option>
+            </select>
+        </div>
+
+        <form id="calcForm">
+
+            <!-- Campo para Metros -->
+            <div>
+                <label for="metros">Distancia (Metros):</label><br>
+                <input type="number" id="metros" placeholder="Ej: 400" maxlength="3"
+                    oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3); calcularElevacion(true)"
+                    required>
+            </div>
+
+            <br>
+
+            <!-- Campo para Inclinación -->
+            <div>
+                <label for="inclinacion">Inclinación (MIL):</label><br>
+                <input type="number" id="inclinacion" placeholder="Ej: 63 o -15" value="0"
+                    oninput="if(this.value.length > 3) this.value = this.value.slice(0, 3); calcularElevacion(true)">
+            </div>
+
+            <br>
+
+            <!-- Resultado -->
+            <div id="resultado">
+                <h3>Elevación a ajustar: <strong>- MIL</strong></h3>
+            </div>
+
+            <br><br>
+
+            <!-- Stitch de cálculo automático-->
+            <div class=" switch-container">
+                <label class="switch">
+                    <input type="checkbox" id="checkTiempoReal">
+                    <span class="slider round"></span>
+                </label>
+                <span class="switch-label">Cálculo automático</span>
+            </div>
+
+            <br>
+
+            <!-- Botón de cálculo -->
+            <button type="button" id="btnCalcular" class="btn-calcular" onclick="calcularElevacion() ">Calcular
+                Elevación</button>
+
+        </form>
+
+        <br><br>
+
+    </div>
+
+    <!-- Vinculamos la lógica de JavaScript -->
+    <script src="script.js"></script>
+</body>
+
+</html>
