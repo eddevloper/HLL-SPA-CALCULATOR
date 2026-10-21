@@ -17,66 +17,79 @@ const TANQUES = {
     }
 };
 
-function calcularElevacion(esAutomatico = false) {
-    let tiempoRealActivo = document.getElementById('checkTiempoReal').checked;
+// Referencias al DOM (se obtienen una sola vez al cargar la página)
+const inputMetros = document.getElementById('metros');
+const inputInclinacion = document.getElementById('inclinacion');
+const checkTiempoReal = document.getElementById('checkTiempoReal');
+const tanqueSelect = document.getElementById('tanqueSelect');
+const contenedorResultado = document.getElementById('resultado');
 
-    // Si la llamada viene del evento 'oninput' y el switch está apagado, no hace nada
-    if (esAutomatico && !tiempoRealActivo) {
+function recortarInput(input, maxDigitos) {
+    const esNegativo = input.value.startsWith('-');
+    const limite = esNegativo ? maxDigitos + 1 : maxDigitos;
+    if (input.value.length > limite) {
+        input.value = input.value.slice(0, limite);
+    }
+}
+
+function calcularElevacion(esAutomatico = false) {
+    // 1. Limpieza total de caracteres no numéricos en metros (evita escribir o pegar '-')
+    inputMetros.value = inputMetros.value.replace(/[^0-9]/g, '');
+
+    // 2. Control y recorte de longitud
+    recortarInput(inputMetros, 3);
+    recortarInput(inputInclinacion, 3);
+
+    // 3. Si la llamada es automática y el switch está apagado, salimos tras limpiar la entrada
+    if (esAutomatico && !checkTiempoReal.checked) {
         return;
     }
-    // Obtenemos los valores de los inputs
-    let metrosInput = document.getElementById('metros').value;
-    let metros = parseFloat(metrosInput);
-    let inclinacion = parseFloat(document.getElementById('inclinacion').value) || 0;
-    let contenedorResultado = document.getElementById('resultado');
 
-    // Obtener configuración del tanque elegido
-    let tanqueElegido = document.getElementById('tanqueSelect').value;
-    let config = TANQUES[tanqueElegido];
+    const metrosInput = inputMetros.value.trim();
 
-    // Validación de campo de metros vacío
-    if (metrosInput.trim() === "" || isNaN(metros)) {
+    // 4. Validación de campo vacío, no numérico o igual/menor a cero
+    if (metrosInput === "" || isNaN(metrosInput) || parseFloat(metrosInput) <= 0) {
         contenedorResultado.innerHTML = "<h3>Elevación a ajustar: <strong>- MIL</strong></h3>";
         return;
     }
 
-    /// Cálculo según el vehículo seleccionado
-    let milsTeoricos = (metros * config.factor) - config.resta;
-    // Ajuste por inclinación del terreno
-    let elevacionFinal = Math.round(milsTeoricos - inclinacion);
+    const metros = parseFloat(metrosInput);
+    const inclinacion = parseFloat(inputInclinacion.value) || 0;
+    const config = TANQUES[tanqueSelect.value];
 
-    // Validación de rangos permitidos por la mecánica del juego (-89 MIL a 466 MIL y máx 600m)
+    // 5. Cálculo balístico
+    const milsTeoricos = (metros * config.factor) - config.resta;
+    const elevacionFinal = Math.round(milsTeoricos - inclinacion);
+
+    // 6. Determinación de la alerta según límites balísticos
+    let mensajeAlerta = "";
+
     if (metros < config.minMetros) {
-        contenedorResultado.innerHTML = `<h3>Elevación a ajustar: <strong>${elevacionFinal} MIL</strong></h3>
-        <p style="color: orange;">⚠️ Advertencia: Distancia menor a ${config.minMetros}m (Fuego directo).</p>`;
+        mensajeAlerta = `<p style="color: orange;">⚠️ Advertencia: Distancia menor a ${config.minMetros}m (Fuego directo).</p>`;
     } else if (metros > config.maxMetros) {
-        contenedorResultado.innerHTML = `<h3>Elevación a ajustar: <strong>${elevacionFinal} MIL</strong></h3>
-        <p style="color: red;">❌ Objetivo fuera de alcance (Supera el límite máximo de ${config.maxMetros}m en terreno plano).</p>`;
+        mensajeAlerta = `<p style="color: red;">❌ Objetivo fuera de alcance (Supera el límite máximo de ${config.maxMetros}m en terreno plano).</p>`;
     } else if (elevacionFinal > config.maxMil) {
-        contenedorResultado.innerHTML = `<h3>Elevación a ajustar: <strong>${elevacionFinal} MIL</strong></h3>
-        <p style="color: red;">❌ Objetivo fuera de alcance (Supera el límite máximo de ${config.maxMil} MIL del cañón).</p>`;
+        mensajeAlerta = `<p style="color: red;">❌ Objetivo fuera de alcance (Supera el límite máximo de ${config.maxMil} MIL del cañón).</p>`;
     } else if (elevacionFinal < config.minMil) {
-        contenedorResultado.innerHTML = `<h3>Elevación a ajustar: <strong>${elevacionFinal} MIL</strong></h3>
-        <p style="color: red;">❌ Ajuste imposible (Supera el límite inferior de ${config.minMil} MIL del cañón).</p>`;
-    } else {
-        contenedorResultado.innerHTML = `<h3>Elevación a ajustar: <strong>${elevacionFinal} MIL</strong></h3>`;
+        mensajeAlerta = `<p style="color: red;">❌ Ajuste imposible (Supera el límite inferior de ${config.minMil} MIL del cañón).</p>`;
     }
+
+    // 7. Renderizado único en pantalla
+    contenedorResultado.innerHTML = `<h3>Elevación a ajustar: <strong>${elevacionFinal} MIL</strong></h3>${mensajeAlerta}`;
 }
 
-// Escuchador de evento para que ejecute el cálculo al encender el switch
-document.getElementById('checkTiempoReal').addEventListener('change', function () {
+// Escuchador para el switch
+checkTiempoReal.addEventListener('change', function () {
     if (this.checked) {
-        //document.getElementById('').addEventListener('change', () => {})
         calcularElevacion(true);
     }
 });
 
-let inputs = document.querySelectorAll('input[type="number"]');
-
-inputs.forEach(function (input) {
-    input.addEventListener('keydown', function (evento) {
+// Listener para cerrar teclado móvil con Enter
+document.querySelectorAll('input[type="number"]').forEach(input => {
+    input.addEventListener('keydown', evento => {
         if (evento.key === 'Enter') {
-            input.blur(); // Le quita el foco al campo y cierra el teclado en móviles
+            input.blur();
         }
     });
 });

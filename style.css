@@ -47,6 +47,13 @@ input[type="number"]:focus {
     box-shadow: 0 0 8px rgba(76, 175, 80, 0.4);
 }
 
+/* Quitar flechas internas de inputs number */
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
 /* Botón de cálculo */
 button {
     background-color: #388e3c;
